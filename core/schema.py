@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 
-
 class ActionItem(BaseModel):
     task_title: str = Field(
         description="Specific action item including the relevant project, system, feature, or component"
@@ -21,7 +20,6 @@ class ActionItem(BaseModel):
         description="Conditions that indicate the task is completed"
     )
 
-
 class Decision(BaseModel):
     decision: str = Field(
         description="Decision explicitly made or agreed upon"
@@ -30,7 +28,6 @@ class Decision(BaseModel):
         description="Reason for making the decision based on the meeting"
     )
 
-
 class Blocker(BaseModel):
     blocker: str = Field(
         description="Specific blocker identified in the meeting"
@@ -38,7 +35,6 @@ class Blocker(BaseModel):
     impact: str = Field(
         description="Impact of the blocker based only on the meeting"
     )
-
 
 class MeetingAnalysis(BaseModel):
     summary: str

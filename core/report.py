@@ -1,18 +1,16 @@
 import json
 from pathlib import Path
 from typing import Union
-from .schemas import MeetingAnalysis
-
+from .schema import MeetingAnalysis
 
 def export_json(result: MeetingAnalysis) -> str:
     """Returns JSON string format of MeetingAnalysis."""
     return result.model_dump_json(indent=4)
 
-
 def export_markdown(result: MeetingAnalysis) -> str:
     """
     Generates Executive Markdown Digest without symbols/emojis.
-    Includes Action Items Table & Risk Matrix Table ready to copy/paste into Notion, Teams, or Slack.
+    Includes Action Items & Project Risks ready to copy/paste into Notion, Teams, or Slack.
     """
     md = []
     md.append("# Executive Meeting Digest")
@@ -23,23 +21,22 @@ def export_markdown(result: MeetingAnalysis) -> str:
     md.append(result.summary)
     md.append("\n")
 
-    # 2. Action Items Table
-    md.append("## Action Items Matrix\n")
+    # 2. Action Items (List Layout)
+    md.append("## Action Items & Assignments\n")
     if not result.action_items:
         md.append("No action items identified.\n")
     else:
-        md.append("| # | Task Title | Assigned (Role) | Priority | Effort | Timeline | Acceptance Criteria |")
-        md.append("|---|------------|-----------------|----------|--------|----------|---------------------|")
-
         for idx, item in enumerate(result.action_items, start=1):
-            title = item.task_title.replace("|", "\\|")
-            assigned = item.assigned.replace("|", "\\|")
-            priority = item.priority
-            effort = item.effort
-            timeline = item.timeline
-            criteria_str = "<br>".join([f"• {c.replace('|', '\\|')}" for c in item.acceptance_criteria])
-
-            md.append(f"| {idx} | **{title}** | {assigned} | `{priority}` | `{effort}` | {timeline} | {criteria_str} |")
+            md.append(f"### Task {idx}: {item.task_title}")
+            md.append(f"- **Assigned:** {item.assigned}")
+            md.append(f"- **Priority:** `{item.priority}`")
+            md.append(f"- **Effort:** `{item.effort}`")
+            md.append(f"- **Timeline:** {item.timeline}")
+            if item.acceptance_criteria:
+                md.append("- **Acceptance Criteria:**")
+                for c in item.acceptance_criteria:
+                    md.append(f"  - {c}")
+            md.append("")  # blank line spacer
         md.append("\n")
 
     # 3. Decision Log
@@ -51,13 +48,13 @@ def export_markdown(result: MeetingAnalysis) -> str:
             md.append(f"### Decision {idx}: {dec.decision}")
             md.append(f"**Rationale:** {dec.rationale}\n")
 
-    # 4. Risk Matrix Table
-    md.append("## Risk & Blocker Matrix\n")
+    # 4. Project Risks
+    md.append("## Project Risks\n")
     if not result.blockers:
-        md.append("No blockers or risks identified.\n")
+        md.append("No risks identified.\n")
     else:
-        md.append("| # | Risk / Blocker | Impact Assessment |")
-        md.append("|---|----------------|-------------------|")
+        md.append("| # | Risk Description | Impact Assessment |")
+        md.append("|---|------------------|-------------------|")
 
         for idx, block in enumerate(result.blockers, start=1):
             b_text = block.blocker.replace("|", "\\|")
@@ -66,7 +63,6 @@ def export_markdown(result: MeetingAnalysis) -> str:
         md.append("\n")
 
     return "\n".join(md)
-
 
 def save_outputs(result: MeetingAnalysis, base_filename: Union[str, Path]):
     input_path = Path(base_filename)

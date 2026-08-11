@@ -1,0 +1,203 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Analysis Results | Meeting Mind AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Results Page Header -->
+        <header class="app-header results-page-header">
+            <div class="header-left">
+                <h1>Meeting Analysis Complete</h1>
+                <p class="tagline">Here's your AI-generated summary of the meeting, including decisions, action items, and project risks.</p>
+            </div>
+        </header>
+
+        <!-- Status & Copy Actions Bar -->
+        <section class="actions-card">
+            <div class="actions-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Analysis Ready</span>
+            </div>
+            <div class="actions-buttons">
+                <button type="button" class="btn btn-secondary" onclick="copyMarkdown()">
+                    Copy as Markdown
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="copyJSON()">
+                    Copy JSON
+                </button>
+                <a href="{% url 'home' %}" class="btn btn-outline-primary">
+                    Summarize Another
+                </a>
+            </div>
+        </section>
+
+        <!-- Main Results Stack (Single Column Layout) -->
+        <div class="results-stack">
+            
+            <!-- Executive Summary Section -->
+            <section class="card result-card">
+                <div class="section-header">
+                    <h2>Executive Summary</h2>
+                    <p class="section-description">A concise overview of the key discussions, outcomes, and important concerns identified from the meeting.</p>
+                </div>
+                <div class="card-body">
+                    <p class="summary-text">{{ summary|linebreaksbr }}</p>
+                </div>
+            </section>
+
+            <!-- Action Items Section -->
+            <section class="card result-card">
+                <div class="section-header">
+                    <h2>Action Items & Assignments</h2>
+                    <p class="section-description">Tasks identified from the meeting, including ownership, priority, effort, and expected timelines.</p>
+                </div>
+                <div class="card-body">
+                    {% if not action_items %}
+                        <p class="empty-state">No action items were identified in this transcript.</p>
+                    {% else %}
+                        <div class="action-items-list">
+                            {% for item in action_items %}
+                                <div class="action-card-horizontal">
+                                    <!-- Left Metadata Column -->
+                                    <div class="action-left-panel">
+                                        <div class="action-assignee">
+                                            <div class="assignee-avatar">
+                                                {{ item.assigned|slice:":1"|upper }}
+                                            </div>
+                                            <h4 class="assignee-name">{{ item.assigned }}</h4>
+                                        </div>
+                                        <div class="action-badges">
+                                            <div class="meta-item">
+                                                <span class="meta-label">Priority:</span>
+                                                <span class="badge badge-priority-{{ item.priority|lower }}">
+                                                    {{ item.priority|upper }}
+                                                </span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <span class="meta-label">Effort:</span>
+                                                <span class="badge badge-effort-{{ item.effort|lower }}">
+                                                    {{ item.effort|upper }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="due-timeline">
+                                            <svg class="clock-svg" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="10"/>
+                                                <polyline points="12 6 12 12 16 14"/>
+                                            </svg>
+                                            <span>{{ item.timeline }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Right Content Column -->
+                                    <div class="action-right-panel">
+                                        <p class="task-title">{{ item.task_title }}</p>
+                                        
+                                        {% if item.acceptance_criteria %}
+                                            <div class="acceptance-section">
+                                                <span class="acceptance-label">Acceptance Criteria</span>
+                                                <ul class="acceptance-list">
+                                                    {% for criterion in item.acceptance_criteria %}
+                                                        <li>{{ criterion }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Decisions Section -->
+            <section class="card result-card">
+                <div class="section-header">
+                    <h2>Decision Log</h2>
+                    <p class="section-description">Key technical, architectural, and business decisions agreed upon during the meeting.</p>
+                </div>
+                <div class="card-body">
+                    {% if not decisions %}
+                        <p class="empty-state">No major decisions were explicitly recorded in the transcript.</p>
+                    {% else %}
+                        <div class="decisions-list">
+                            {% for dec in decisions %}
+                                <div class="decision-card">
+                                    <div class="decision-icon-marker">i</div>
+                                    <div class="decision-content">
+                                        <h4 class="decision-text">{{ dec.decision }}</h4>
+                                        <div class="decision-rationale">
+                                            <strong>Rationale:</strong>
+                                            <p>{{ dec.rationale }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- Project Risks Section -->
+            <section class="card result-card blocker-section-card">
+                <div class="section-header">
+                    <h2>Project Risks</h2>
+                    <p class="section-description">Issues, dependencies, and risks that may affect project delivery or business outcomes.</p>
+                </div>
+                <div class="card-body">
+                    {% if not blockers %}
+                        <p class="empty-state">No risks or blocker points were identified.</p>
+                    {% else %}
+                        <div class="blockers-list">
+                            {% for b in blockers %}
+                                <div class="blocker-card">
+                                    <!-- Left Metadata Column -->
+                                    <div class="blocker-left-panel">
+                                        <div class="blocker-badge">RISK</div>
+                                        <span class="impact-label">Impact Assessment</span>
+                                    </div>
+                                    <!-- Right Content Column -->
+                                    <div class="blocker-right-panel">
+                                        <h4 class="blocker-title">{{ b.blocker }}</h4>
+                                        <div class="blocker-impact">
+                                            <p>{{ b.impact }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-divider"></div>
+            <p class="footer-brand">Meeting Mind AI</p>
+            <p class="footer-tagline">AI-powered meeting intelligence for clearer decisions and actionable outcomes.</p>
+            <p class="footer-credits">Powered by Azure OpenAI • GPT-5-mini</p>
+        </footer>
+    </div>
+
+    <!-- Hidden Raw Content for Copying -->
+    <script id="markdown-raw" type="text/plain">{{ markdown_content|safe }}</script>
+    <script id="json-raw" type="application/json">{{ json_content|safe }}</script>
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="toast hidden"></div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

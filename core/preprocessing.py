@@ -1,6 +1,5 @@
 import re
 
-
 def preprocess_transcript(text: str) -> str:
     """
     Strips timestamps, filler words, extra blank lines, and normalizes spacing.

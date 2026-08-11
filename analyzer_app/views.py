@@ -1,62 +1,107 @@
 import json
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render, redirect
+from core.preprocessing import preprocess_transcript
+from core.azure import analyze_meeting
+from core.report import export_json, export_markdown
 
-from core.preprocessor import preprocess_transcript
-from core.analyzer import analyze_meeting
-from core.exporters import export_json, export_markdown
+def home_view(request):
+    """Renders the main upload & paste web interface."""
+    return render(request, 'meeting/home.html', {'active_tab': 'file'})
 
-
-def index(request):
-    """Renders the main web interface."""
-    return render(request, 'index.html')
-
-
-@csrf_exempt
-def analyze_api(request):
-    """
-    API view for processing meeting transcripts via file upload (.txt) or direct text.
-    """
+def analyze_view(request):
+    """Processes the transcript and renders the result page or redirects on error."""
     if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
+        return redirect('home')
 
     raw_text = ""
-    filename = "meeting_transcript.txt"
+    filename = "Pasted Text"
+    active_tab = 'file'
 
     try:
-        # 1. Handle File Upload
-        if 'transcript_file' in request.FILES:
+        # Determine source: File Upload or Raw Text
+        source_type = request.POST.get('source_type', 'file')
+
+        if source_type == 'file':
+            active_tab = 'file'
+            if 'transcript_file' not in request.FILES:
+                return render(request, 'meeting/home.html', {
+                    'error': 'Please select a .txt transcript file to upload.',
+                    'active_tab': active_tab
+                })
+            
             uploaded_file = request.FILES['transcript_file']
             filename = uploaded_file.name
-            raw_text = uploaded_file.read().decode('utf-8')
 
-        # 2. Handle Raw Text Input
-        elif request.content_type == 'application/json':
-            body = json.loads(request.body.decode('utf-8'))
-            raw_text = body.get('transcript_text', '')
-        else:
-            raw_text = request.POST.get('transcript_text', '')
+            # Server-side validation: extension check
+            if not filename.lower().endswith('.txt'):
+                return render(request, 'meeting/home.html', {
+                    'error': 'Invalid file format. Only .txt transcript files are supported.',
+                    'active_tab': active_tab
+                })
 
-        if not raw_text or not raw_text.strip():
-            return JsonResponse({'error': 'No transcript content provided. Please upload a .txt file or paste meeting text.'}, status=400)
+            # Server-side validation: file size limit (2 MB)
+            if uploaded_file.size > 2 * 1024 * 1024:
+                return render(request, 'meeting/home.html', {
+                    'error': 'File size exceeds the 2 MB limit.',
+                    'active_tab': active_tab
+                })
 
-        # 3. Preprocess Transcript
+            try:
+                raw_text = uploaded_file.read().decode('utf-8')
+            except Exception:
+                return render(request, 'meeting/home.html', {
+                    'error': 'Failed to read the file. Please ensure it is a valid text file.',
+                    'active_tab': active_tab
+                })
+
+            if not raw_text.strip():
+                return render(request, 'meeting/home.html', {
+                    'error': 'The uploaded transcript file is empty.',
+                    'active_tab': active_tab
+                })
+
+        else:  # source_type == 'text'
+            active_tab = 'text'
+            raw_text = request.POST.get('transcript_text', '').strip()
+
+            if not raw_text:
+                return render(request, 'meeting/home.html', {
+                    'error': 'Please paste your meeting transcript before submitting.',
+                    'active_tab': active_tab
+                })
+
+            # Server-side validation: word count limit (1500 words)
+            word_count = len(raw_text.split())
+            if word_count > 1500:
+                return render(request, 'meeting/home.html', {
+                    'error': f'Pasted text exceeds the 1500 words limit (Current: {word_count} words).',
+                    'active_tab': active_tab,
+                    'transcript_text': raw_text
+                })
+
+        # Process and analyze
         cleaned_text = preprocess_transcript(raw_text)
-
-        # 4. Analyze Meeting via Azure OpenAI
         result = analyze_meeting(cleaned_text)
 
-        # 5. Export JSON and Markdown (with Action Items Table)
-        json_output = json.loads(export_json(result))
+        # Build exports for frontend copy operations
+        json_output = export_json(result)
         markdown_output = export_markdown(result)
 
-        return JsonResponse({
-            'success': True,
+        context = {
             'filename': filename,
-            'data': json_output,
-            'markdown': markdown_output
-        })
+            'summary': result.summary,
+            'action_items': result.action_items,
+            'decisions': result.decisions,
+            'blockers': result.blockers,
+            'markdown_content': markdown_output,
+            'json_content': json_output
+        }
+
+        return render(request, 'meeting/result.html', context)
 
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return render(request, 'meeting/home.html', {
+            'error': f'Analysis failed: {str(e)}',
+            'active_tab': active_tab,
+            'transcript_text': request.POST.get('transcript_text', '')
+        })

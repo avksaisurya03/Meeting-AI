@@ -1,0 +1,163 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Mind AI | Turn meeting conversations into clear, actionable insights</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <h1>Meeting Mind AI</h1>
+            <p class="tagline">Turn meeting conversations into clear, actionable insights.</p>
+            <p class="description">
+                Upload or paste your meeting transcript and let AI identify the key decisions, action items, blockers, priorities, timelines, and responsibilities.
+            </p>
+        </header>
+
+        <!-- Error Banner -->
+        {% if error %}
+        <div class="error-banner">
+            <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span class="error-text">{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Main Form Card -->
+        <main class="main-content">
+            <form id="analyze-form" action="{% url 'analyze' %}" method="POST" enctype="multipart/form-data" onsubmit="showLoadingState(event)">
+                {% csrf_token %}
+                <input type="hidden" name="source_type" id="source_type" value="{{ active_tab|default:'file' }}">
+
+                <section class="card input-card">
+                    <h2 class="card-title">Analyze Your Meeting</h2>
+
+                    <!-- Tab Buttons -->
+                    <div class="tab-buttons">
+                        <button type="button" id="tab-file-btn" class="tab-btn {% if active_tab == 'file' or not active_tab %}active{% endif %}" onclick="switchTab('file')">
+                            Upload .txt File
+                        </button>
+                        <button type="button" id="tab-text-btn" class="tab-btn {% if active_tab == 'text' %}active{% endif %}" onclick="switchTab('text')">
+                            Paste Raw Text
+                        </button>
+                    </div>
+
+                    <!-- File Drop Zone Tab View -->
+                    <div id="file-tab" class="tab-content {% if active_tab == 'file' or not active_tab %}active{% endif %}">
+                        <div class="file-drop-zone" id="drop-zone" onclick="triggerFileInput(event)">
+                            <input type="file" name="transcript_file" id="file-input" accept=".txt" class="hidden-file-input" onchange="handleFileSelect(event)">
+                            
+                            <div class="drop-zone-content" id="drop-zone-prompt">
+                                <svg class="upload-svg" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                <h3>Upload your transcript</h3>
+                                <p>Drag & drop your <code>.txt</code> file here, or click to browse</p>
+                                <div class="file-rules">
+                                    <span>Supported format: <strong>TXT</strong></span>
+                                    <span class="separator">•</span>
+                                    <span>Maximum size: <strong>2 MB</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- File Selected Preview Card -->
+                            <div id="file-selected-card" class="file-selected-card hidden">
+                                <div class="file-info">
+                                    <svg class="file-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    <div class="file-details">
+                                        <span id="selected-filename" class="filename"></span>
+                                        <span id="selected-filesize" class="filesize"></span>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-remove" onclick="removeSelectedFile(event)">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Text Input Tab View -->
+                    <div id="text-tab" class="tab-content {% if active_tab == 'text' %}active{% endif %}">
+                        <div class="textarea-header">
+                            <label for="text-input" class="field-label">Paste Your Transcript</label>
+                            <span class="field-description">Don't have a file? Paste your meeting transcript directly below.</span>
+                        </div>
+                        <textarea name="transcript_text" id="text-input" placeholder="Paste your meeting transcript here..." rows="10" oninput="updateWordCount(this)">{{ transcript_text|default:'' }}</textarea>
+                        <div class="textarea-footer">
+                            <span id="word-counter" class="word-counter">0 / 1500 words</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Action Block -->
+                    <div class="action-bar">
+                        <button type="submit" id="analyze-btn" class="btn btn-primary">
+                            Analyze Transcript &rarr;
+                        </button>
+                    </div>
+                </section>
+            </form>
+
+            <!-- Loading Spinner Container -->
+            <div id="loading-container" class="loading-card hidden">
+                <div class="spinner"></div>
+                <h3>Analyzing Meeting Transcript...</h3>
+                <p>Please wait while Azure OpenAI GPT-5-mini extracts action items, decisions, and blockers.</p>
+            </div>
+
+            <!-- Features Grid Section -->
+            <section class="features-section">
+                <h2 class="section-title">What Meeting Mind AI Extracts</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">✓</div>
+                        <h3>Action Items</h3>
+                        <p>Tasks, assignees, and timelines</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✓</div>
+                        <h3>Decisions</h3>
+                        <p>Key decisions and rationale</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✓</div>
+                        <h3>Blockers</h3>
+                        <p>Risks and their impact</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">✓</div>
+                        <h3>Executive Summary</h3>
+                        <p>Clear overview of the meeting</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-divider"></div>
+            <p class="footer-brand">Meeting Mind AI</p>
+            <p class="footer-tagline">AI-powered meeting intelligence for clearer decisions and actionable outcomes.</p>
+            <p class="footer-credits">Powered by Azure OpenAI • GPT-5-mini</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="toast hidden"></div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>
