@@ -1,0 +1,17 @@
+Meeting 10: Autonomous Vehicle LiDAR Calibration Engine
+Topic: Thermal Drift Sensor Fusion & Point Cloud Downsampling | Date: March 19, 2026
+
+Amit: Good morning team, let's start our autonomous driving sensor fusion sync. Priya, our LiDAR Specialist, is taking personal leave today. Chetan will handle all LiDAR calibration updates in today's discussion.
+Chetan: We hit a major safety blocker during night driving simulations yesterday. Camera and LiDAR point cloud alignment fails completely when thermal noise affects our infrared camera sensors.
+Amit: What is the regulatory risk if we cannot resolve thermal calibration drift?
+Chetan: The test vehicle will automatically fail local transit safety certification trials scheduled for next month.
+Ramesh: In addition, GPU memory consumption on our embedded Nvidia Jetson modules spikes by 40% when processing uncalibrated point clouds.
+Amit: High GPU memory usage could trigger thermal throttling inside the vehicle compute unit during real-world driving.
+Chetan: We can fix the sensor alignment issue by dynamically adjusting Kalman filter thermal variance thresholds based on ambient temperature readings.
+Ramesh: To reduce GPU load, we can filter out low-density point cloud regions before running sensor fusion algorithms.
+Amit: Excellent engineering approach. Decision one: implement dynamic Kalman filter weight adjustments for thermal noise. Decision two: apply spatial point cloud downsampling before neural network processing.
+Chetan: Action item one: Chetan, adjust sensor fusion variance weights and run night simulation benchmarks by Thursday 5 PM.
+Chetan: I will tune the Kalman filter parameters and complete night simulation runs by Thursday evening.
+Amit: Action item two: Ramesh, deploy point cloud downsampling CUDA kernels on the Jetson test rig by Friday noon.
+Ramesh: I will optimize the CUDA kernels and verify memory stability by Friday at 12 PM.
+Amit: Let's make sure our test vehicles are fully prepared for next month's safety trials.

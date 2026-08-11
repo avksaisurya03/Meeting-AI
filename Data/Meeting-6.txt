@@ -1,0 +1,17 @@
+Meeting 6: AI Medical Diagnostics Model Deployment
+Topic: Model Evaluation Pipeline & Quantization | Date: March 15, 2026
+
+Manish: Let me open our AI diagnostic model evaluation sync. Ananya, our Senior Data Engineer, is taking emergency leave today. Siddharth will present the model performance metrics and infrastructure status.
+Siddharth: We hit a severe API blocker during our automated evaluation runs last night. The Anthropic API rate limits caused our batch evaluation script to crash midway through processing patient scans.
+Manish: What is the risk level associated with these incomplete evaluation runs?
+Siddharth: It is a high product risk because we cannot verify model accuracy across rare pathology cases without running the full test suite.
+Gourav: In addition, our model inference latency is sitting at 3.5 seconds per query. That is far too slow for real-time ER clinical workflows.
+Manish: We need inference latency under 800 milliseconds before hospital deployment.
+Siddharth: We can wrap our API calls in an exponential backoff decorator to handle rate limits gracefully without failing batch runs.
+Gourav: To fix latency, we can quantize the underlying vision model from FP16 to INT8 precision.
+Manish: Excellent proposals. Decision one: we adopt INT8 model quantization immediately. Decision two: we implement robust retry logic in all batch evaluation scripts.
+Siddharth: Action item one: Siddharth, implement an exponential backoff client for the Anthropic API by tomorrow noon.
+Siddharth: I will write the backoff wrapper and re-run the evaluation pipeline by 12 PM tomorrow.
+Manish: Action item two: Gourav, quantize the vision model to INT8 and measure latency improvements on GPU nodes by Thursday 3 PM.
+Gourav: I will complete model quantization and benchmark latency by Thursday afternoon.
+Manish: Let us regroup on Friday with the full evaluation metrics and latency report.

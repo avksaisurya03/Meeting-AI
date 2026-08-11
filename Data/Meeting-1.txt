@@ -1,0 +1,14 @@
+Meeting 1: FinTech Core Banking API Migration
+Topic: Core Banking API Migration & Gateway Integration | Date: March 10, 2026
+
+Rohan: Good morning team, let me start today's sync with an urgent update. Vikrant, our Lead Architect, is out on emergency sick leave until Friday. Because of his absence, I will be stepping in to manage the core API migration tasks. First, Priya, what is the status of the HDFC payment gateway integration?
+Priya: We hit a major technical blocker yesterday afternoon on the staging environment. The sandbox API keys expired suddenly, and their support desk hasn't renewed our enterprise credentials yet. Because of this, we literally cannot run any end-to-end payment settlement tests today.
+Rohan: That creates a massive project risk for our launch timeline. If we cannot complete sandbox testing by Thursday, we will miss our scheduled weekend maintenance window. What about the database migration script for the customer ledger?
+Priya: Running that database migration during business hours will lock the primary ledger table for ten minutes. If that happens, thousands of active users will experience 504 gateway timeouts at checkout.
+Rohan: Okay, let me make two firm decisions right now to mitigate these risks. Decision one: the database script will only run at Saturday 2 AM during off-peak hours. Decision two: Karthik, you need to call the HDFC escalation manager immediately to renew our sandbox keys today.
+Karthik: Understood, Rohan. I will personally handle the HDFC escalation and get those sandbox credentials renewed by 3 PM.
+Rohan: Perfect. Action item for you, Priya: write exponential backoff retry logic for our payment webhooks by Wednesday EOD.
+Priya: Got it, I will finish the backoff retry logic by Wednesday evening.
+Rohan: Action item for Karthik: unblock the AWS KMS production access permissions with Infosec by tomorrow noon.
+Karthik: I will ping the Infosec lead today and ensure KMS access is approved by 12 PM tomorrow.
+Rohan: Excellent, let us focus on these deliverables and regroup tomorrow morning.

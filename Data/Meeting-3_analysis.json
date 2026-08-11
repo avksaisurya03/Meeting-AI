@@ -1,0 +1,66 @@
+{
+    "summary": "This sync reviewed staging load-test failures and agreed immediate remediation steps to make the platform ready for the Diwali flash sale. Key issues: the primary PostgreSQL database locked up during a 50,000 concurrent-user test due to unindexed foreign keys in the order_items table, causing Spring Boot thread pools to hit 100% utilization; the payment gateway integration lacks a fallback mechanism; the current cache is single-node Memcached. Decisions were made to add composite indexes to foreign-key columns across the checkout schema and to migrate caching to a three-shard Redis Cluster (AWS ElastiCache). Explicit action items were assigned to apply the index migration and re-run load tests, provision and test the Redis cluster, and implement Resilience4j circuit breakers for checkout endpoints. The team emphasized thorough staging testing before Friday's code freeze.",
+    "action_items": [
+        {
+            "task_title": "Apply composite indexes to foreign-key columns in the checkout schema on staging and run a fresh load test",
+            "assigned": "Pooja (Frontend/Backend representative)",
+            "priority": "High",
+            "effort": "Moderate",
+            "timeline": "By 5 PM today (March 12, 2026)",
+            "acceptance_criteria": [
+                "Index migration script executed on the staging checkout schema",
+                "A fresh load test against staging completed",
+                "New performance metrics from the load test shared with the team by 5 PM",
+                "No complete PostgreSQL lockup observed during the load test and Spring Boot thread pools do not hit 100% utilization"
+            ]
+        },
+        {
+            "task_title": "Provision and configure a three-shard Redis Cluster on AWS ElastiCache and complete connection testing",
+            "assigned": "Amit",
+            "priority": "High",
+            "effort": "Moderate",
+            "timeline": "By 11 AM tomorrow (March 13, 2026)",
+            "acceptance_criteria": [
+                "Three-shard Redis Cluster provisioned on AWS ElastiCache",
+                "Application connection testing to the Redis Cluster completed successfully",
+                "Confirmation shared that Redis Cluster connectivity is stable"
+            ]
+        },
+        {
+            "task_title": "Implement circuit breaker wrappers (Resilience4j) for checkout API endpoints in the order service",
+            "assigned": "Pooja (Frontend/Backend representative)",
+            "priority": "High",
+            "effort": "Complex",
+            "timeline": "By Thursday EOD (as stated in meeting)",
+            "acceptance_criteria": [
+                "Resilience4j circuit breakers implemented for checkout API endpoints in the order service",
+                "Circuit breaker behavior exercised in tests and deployed to staging",
+                "Evidence that payment/checkout failures are handled via the circuit breaker (fallbacks or controlled degradation) and test results shared"
+            ]
+        }
+    ],
+    "decisions": [
+        {
+            "decision": "Add composite indexes to all foreign-key columns across the checkout schema.",
+            "rationale": "The primary PostgreSQL database locked up during the 50,000 concurrent-user staging test due to unindexed foreign keys in the order_items table; indexing is required immediately to prevent database crashes under peak load."
+        },
+        {
+            "decision": "Switch caching from single-node Memcached to a Redis Cluster with three shards on AWS ElastiCache.",
+            "rationale": "A Redis Cluster provides automatic failover and higher read throughput during peak traffic, addressing the single-node Memcached availability and throughput limitations identified for the flash sale."
+        }
+    ],
+    "blockers": [
+        {
+            "blocker": "Primary PostgreSQL database locked up during 50,000 concurrent-user load test due to unindexed foreign keys in the order_items table.",
+            "impact": "Caused full DB lockup and is an unacceptable business risk for the Diwali flash sale; could cause service outages and revenue loss during peak traffic."
+        },
+        {
+            "blocker": "Spring Boot service thread pools hit 100% utilization within two minutes during the load test.",
+            "impact": "Service threads saturated leading to degraded or unavailable services under sustained load."
+        },
+        {
+            "blocker": "Payment gateway integration lacks a fallback mechanism when primary API endpoints fail.",
+            "impact": "No fallback increases risk of failed payments or checkout failures if the payment provider is unavailable during peak traffic."
+        }
+    ]
+}

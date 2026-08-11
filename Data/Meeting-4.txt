@@ -1,0 +1,17 @@
+Meeting 4: Supply Chain Inventory Telemetry Pipeline
+Topic: Warehouse IoT Telemetry & Scanner Connectivity | Date: March 13, 2026
+
+
+Tushar: Good afternoon everyone, let's review the warehouse tracking pipeline. Suresh, our Lead Hardware Engineer, is on bereavement leave until Monday. Amit will cover all IoT device updates in today's discussion.
+Amit: We have a major hardware blocker across our primary Bangalore distribution center. Handheld Bluetooth barcode scanners are losing Wi-Fi connectivity every ten minutes when workers roam between access points.
+Tushar: That creates a severe operational risk for our dispatch SLAs. If warehouse workers cannot scan items efficiently, order processing times will double across all southern hubs.
+Preeti: From the software side, our Kafka ingestion service is falling behind on telemetry events. The message lag on the inventory update topic reached 80,000 messages during morning peak hours.
+Tushar: That explains why the inventory dashboard was showing stale stock levels to online buyers.
+Amit: The scanner connectivity issue is caused by outdated Wi-Fi roaming firmware on the handheld units.
+Tushar: Here are our team decisions for today. Decision one: we will deploy a firmware patch to all handheld units tonight during shift change. Decision two: we will scale our Kafka consumer groups from four to twelve instances.
+Amit: Deploying that firmware patch will force seamless WPA2-Enterprise roaming across all warehouse access points.
+Tushar: Action item one: Amit, flash the updated firmware on all 120 Bangalore handheld scanners by 10 PM tonight.
+Amit: I will handle the scanner firmware updates during the night shift transition.
+Tushar: Action item two: Preeti, repartition the Kafka telemetry topic and scale worker instances by tomorrow 2 PM.
+Preeti: I will increase topic partitions and deploy additional consumer pods by 2 PM tomorrow.
+Tushar: Excellent, let us ensure these fixes stabilize our warehouse operations before tomorrow's peak dispatch window.

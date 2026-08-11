@@ -1,0 +1,17 @@
+Meeting 8: AdTech Real-Time Bidding Latency Reduction
+Topic: Bidding Engine Cache Memory & Eviction Policies | Date: March 17, 2026
+
+Gourav: Good morning team, let's start our real-time bidding engine performance sync. Nidhi, our Lead Data Scientist, is on maternity leave starting today. Kiran will be taking over her data pipeline management responsibilities.
+Kiran: We experienced a critical production blocker during peak bidding traffic today. Redis cache memory usage reached 98%, causing key eviction drops across our real-time auction nodes.
+Gourav: What is the financial impact if auction response times exceed our latency budget?
+Kiran: If bid calculations exceed 15 milliseconds, major ad exchanges drop our bids automatically. That results in immediate revenue loss during high-traffic auction windows.
+Swati: The root cause is that historical auction contextual data keys are stored without appropriate expiration time-to-live settings.
+Gourav: We cannot allow memory leaks to degrade our core ad serving infrastructure.
+Kiran: We should implement an aggressive five-minute TTL on all temporary bid context keys in Redis.
+Swati: We also need to scale our ElastiCache cluster nodes to memory-optimized instances to handle traffic spikes.
+Gourav: Decision one: implement five-minute TTL policies across all contextual cache keys. Decision two: upgrade Redis cluster node types to r6g.xlarge today.
+Kiran: Action item one: Kiran, flush expired key spaces and deploy memory-optimized node instances by 11 PM tonight.
+Kiran: I will execute the Redis cluster upgrade during tonight's low-traffic window at 11 PM.
+Gourav: Action item two: Swati, update the Python caching library to enforce mandatory TTLs on all key write operations by Thursday noon.
+Swati: I will update the caching library and release the patch by Thursday at 12 PM.
+Gourav: Thank you everyone, let's ensure bidding latency stays under ten milliseconds after tonight's deployment.

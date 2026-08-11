@@ -1,0 +1,17 @@
+Meeting 9: InsurTech Claims OCR Processing Automation
+Topic: Medical Prescriptions OCR & Human-in-the-Loop Routing | Date: March 18, 2026
+
+
+Abhinav: Welcome everyone to our automated claims processing standup. Sunita, our Operations Lead, is taking medical leave today. Kavita will represent the operations team in today's session.
+Kavita: We have a major accuracy blocker in our insurance claim ingestion pipeline. Our Tesseract OCR model is failing on handwritten doctor prescriptions, returning confidence scores under 40%.
+Abhinav: That creates a severe operational risk for our payout timelines. Our manual claims processing backlog has increased to 4,000 pending files this week.
+Rahul: If we fail to process claims within 48 hours, we violate state insurance commission service level agreements.
+Kavita: The primary problem is that bad OCR data is flowing directly into automated approval workflows without human validation.
+Abhinav: That is a dangerous design flaw. We must prevent inaccurate OCR extractions from triggering invalid claim payouts.
+Rahul: We should introduce a confidence threshold rule in our claim parsing logic. Any OCR extraction scoring below 75% confidence must be routed to human reviewers automatically.
+Abhinav: Decision one: enforce automated human-in-the-loop routing for all low-confidence claim documents. Decision two: evaluate AWS Textract as a replacement for Tesseract OCR.
+Rahul: Action item one: Rahul, write a Python routing middleware that sends low-confidence OCR results to the human review portal by Thursday 11 AM.
+Rahul: I will integrate the confidence threshold check and deploy the routing service by Thursday morning.
+Abhinav: Action item two: Kavita, benchmark AWS Textract accuracy against 200 sample medical claims by Friday 3 PM.
+Kavita: I will run the Textract evaluation benchmark and share accuracy comparisons by Friday afternoon.
+Abhinav: Let's clear this manual backlog and restore our 48-hour processing guarantee.

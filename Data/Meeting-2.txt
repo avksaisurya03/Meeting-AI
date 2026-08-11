@@ -1,0 +1,17 @@
+Meeting 2: Healthcare EHR Portal Integration
+Topic: Patient Portal & Medical Image Parsing | Date: March 11, 2026
+
+Dr. Aris: Welcome everyone to our weekly DiagnosticAI integration standup. Before we begin, Elena is taking sick leave today due to a high fever. Siddharth will be taking over her model validation tasks for the rest of the week. Let's discuss our biggest technical blockers right now.
+Siddharth: We have a critical memory issue in our Python ingestion worker. When processing 3D MRI scans over 500 MB, the container triggers an Out-Of-Memory crash on AWS ECS. The entire API pod crashes instantly, dropping all active user connections.
+Devansh: That explains why the web portal was throwing broken pipe errors during yesterday's demo upload.
+Meera: Guys, before we fix memory, I must highlight a severe security risk. Raw medical scans containing patient names and Aadhaar numbers are currently written to local disk without encryption. If that worker node gets compromised, we face severe regulatory fines under HIPAA and DPDP laws.
+Dr. Aris: That is completely unacceptable for an enterprise healthcare application. We must resolve this security flaw before our upcoming compliance audit next week.
+Siddharth: Here is our architectural decision: we must stop processing DICOM files directly on the API server. Instead, the frontend will upload files directly to S3 using presigned URLs, and Celery background workers will process them in chunks.
+Devansh: That approach completely prevents container crashes and keeps the API gateway fast.
+Dr. Aris: Great decision. Action item one: Siddharth, refactor the DICOM parser to use S3 presigned URLs and Celery workers by Thursday morning.
+Siddharth: I will complete the S3 streaming refactor by Thursday 10 AM.
+Dr. Aris: Action item two: Devansh, implement local AES-256 encryption for temporary worker files and submit the PR by Friday noon.
+Devansh: I will submit the encryption PR by Friday at 12 PM.
+Dr. Aris: Action item three: Meera, prepare the preliminary HIPAA audit report and deliver it to me by Friday 4 PM.
+Meera: I will deliver the compliance report to your inbox by Friday afternoon.
+Dr. Aris: Perfect, thank you everyone for your clear focus today.

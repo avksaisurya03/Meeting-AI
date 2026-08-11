@@ -1,0 +1,17 @@
+Meeting 3: E-Commerce Flash Sale Architecture Sync
+Topic: Flash Sale Infrastructure & Database Performance | Date: March 12, 2026
+
+
+Alok: Welcome team to the flash sale readiness sync. Deepa, our Lead Frontend Engineer, is taking personal leave today. Pooja will be representing both frontend and backend updates during this meeting. Let's review our staging environment load test results from last night.
+Pooja: We encountered a massive database blocker during the 50,000 concurrent user simulation. The primary PostgreSQL database locked up completely due to unindexed foreign keys in the order items table. Thread pools in our Spring Boot services hit 100% utilization within two minutes.
+Alok: That presents an unacceptable business risk for our Diwali flash sale next week. If the database crashes during live traffic, we could lose millions in revenue within minutes.
+Pooja: In addition, our payment gateway integration lacks a fallback mechanism when primary API endpoints fail.
+Alok: We must fix both of these vulnerabilities immediately. Decision one: we will add composite indexes to all foreign key columns across the checkout schema today. Decision two: we are switching our cache layer from single-node Memcached to a Redis Cluster with three shards.
+Pooja: Redis Cluster will give us automatic failover and much higher read throughput during peak traffic.
+Alok: Action item one: Pooja, apply the database indexing script on staging and run a fresh load test by 5 PM today.
+Pooja: I will execute the index migration and share new performance metrics by 5 PM.
+Alok: Action item two: Amit, configure the three-shard Redis cluster on AWS ElastiCache by tomorrow morning.
+Amit: I will provision the ElastiCache cluster and complete connection testing by 11 AM tomorrow.
+Alok: Action item three: Pooja, write a circuit breaker wrapper for the checkout API endpoints by Thursday EOD.
+Pooja: I will implement Resilience4j circuit breakers in the order service by Thursday evening.
+Alok: Let's make sure all changes are thoroughly tested on staging before Friday's freeze.

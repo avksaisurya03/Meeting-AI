@@ -1,0 +1,17 @@
+Meeting 5: EdTech Video Streaming & Transcribing System
+Topic: Mobile App Release & Audio Transcription GPU Pipeline | Date: March 14, 2026
+
+
+Divya: Welcome everyone to the EduPulse app release meeting. Harish, our Senior iOS Developer, is out on sick leave today. Rahul will be taking over iOS deployment duties for this release.
+Rahul: We received an unexpected rejection from Apple App Store Review last night. That is our primary blocker for this sprint. The rejection reason cites missing privacy manifest declarations for our video playback SDKs.
+Divya: That is a critical project risk for our upcoming academic semester launch. If the app update is delayed beyond Friday, 100,000 enrolled students will not have access to live lectures.
+Karan: Furthermore, our backend transcribing service is failing on video files longer than two hours. The Whisper speech-to-text pipeline runs out of GPU memory and terminates unexpectedly.
+Divya: We cannot launch with broken lecture transcription capabilities either.
+Rahul: For the iOS rejection, I can manually construct the missing PrivacyInfo file and declare all SDK data types.
+Karan: For the transcription memory issue, we should split long audio streams into ten-minute chunks before sending them to the GPU pipeline.
+Divya: Great solutions. Decision one: we adopt audio chunking for all long lecture recordings. Decision two: we re-submit the iOS build immediately after attaching the privacy manifest.
+Rahul: Action item one: Rahul, update the PrivacyInfo manifest and submit a new iOS binary to TestFlight by 9 PM tonight.
+Rahul: I will complete the manifest configuration and trigger the TestFlight build tonight.
+Divya: Action item two: Karan, implement audio chunking logic in the Python transcription service by Wednesday 4 PM.
+Karan: I will write the audio chunking script and test GPU memory consumption by Wednesday afternoon.
+Divya: Thank you team, let's execute these fixes quickly so we stay on track for our Friday launch.

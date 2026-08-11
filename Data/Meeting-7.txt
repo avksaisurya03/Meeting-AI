@@ -1,0 +1,16 @@
+Meeting 7: CyberSecurity Zero-Trust Network Transition
+Topic: SOC2 Audit Evidence & Service Mesh Encryption | Date: March 16, 2026
+
+Neha: Welcome team to our SOC2 compliance and zero-trust sync. Rajesh, our CISO, is traveling and on official leave until Monday. Neha will lead today's compliance review.
+Karan: We identified a major audit blocker during our internal security review yesterday. AWS CloudTrail log file validation is currently disabled on three public S3 buckets storing customer document uploads.
+Neha: That presents an extreme regulatory risk for our business. External auditors from KPMG will flag this as a major non-compliance finding during next week's SOC2 review.
+Varun: Additionally, several legacy internal microservices are still communicating using unencrypted HTTP endpoints inside our Kubernetes cluster.
+Neha: Unencrypted internal traffic violates our zero-trust security framework.
+Karan: We can resolve the S3 audit issue by enabling CloudTrail object-level logging and enforcing multi-factor authentication for deletions.
+Varun: For internal service traffic, we can deploy Istio service mesh to automatically enforce mutual TLS encryption across all pods.
+Neha: Let's formalize these decisions. Decision one: enforce mTLS across all Kubernetes namespaces using Istio sidecars. Decision two: lock down all S3 bucket policies immediately.
+Karan: Action item one: Karan, enable S3 CloudTrail log validation and enforce MFA delete across all production buckets by Friday 2 PM.
+Karan: I will update the S3 Terraform scripts and apply changes by Friday afternoon.
+Neha: Action item two: Varun, deploy Istio mTLS strict mode on the staging cluster by Wednesday EOD.
+Varun: I will roll out Istio sidecars on staging and test service-to-service communication by Wednesday evening.
+Neha: Let's make sure our audit evidence folder is completely updated before Monday morning.
