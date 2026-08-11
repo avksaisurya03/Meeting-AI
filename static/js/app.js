@@ -156,6 +156,13 @@ function showLoadingState(event) {
             event.preventDefault();
             return;
         }
+
+        const file = fileInput.files[0];
+        if (!file.name.toLowerCase().endsWith('.txt')) {
+            showToast("Error: Only .txt transcript files are supported.");
+            event.preventDefault();
+            return;
+        }
     } else {
         const textarea = document.getElementById('text-input');
         const text = textarea ? textarea.value.trim() : '';
