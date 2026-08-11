@@ -3,26 +3,26 @@ from django.shortcuts import render, redirect
 from core.preprocessing import preprocess_transcript
 from core.azure import analyze_meeting
 from core.report import export_json, export_markdown
-from core.database import save_meeting_analysis, get_all_meetings, get_meeting_analysis_by_id
-from core.schema import MeetingAnalysis, ActionItem, Decision, Blocker
+from core.schema import MeetingAnalysis, ActionItem as SchemaActionItem, Decision as SchemaDecision, Blocker as SchemaBlocker
+from .models import Meeting, ActionItem, Decision, ProjectRisk
 
 def home_view(request):
     """Renders the main upload & paste web interface with recent meeting history."""
-    past_meetings = get_all_meetings()
+    past_meetings = Meeting.objects.all().order_by('-created_at')
     return render(request, 'meeting/home.html', {
         'active_tab': 'file',
         'past_meetings': past_meetings
     })
 
 def analyze_view(request):
-    """Processes the transcript and saves it to Supabase or falls back to direct render."""
+    """Processes the transcript and saves it directly to the local SQLite database."""
     if request.method != 'POST':
         return redirect('home')
 
     raw_text = ""
     filename = "Pasted Text"
     active_tab = 'file'
-    past_meetings = get_all_meetings()
+    past_meetings = Meeting.objects.all().order_by('-created_at')
 
     try:
         # Determine source: File Upload or Raw Text
@@ -97,37 +97,52 @@ def analyze_view(request):
         cleaned_text = preprocess_transcript(raw_text)
         result = analyze_meeting(cleaned_text)
 
-        # Build exports for formatting
-        json_output = export_json(result)
-        markdown_output = export_markdown(result)
+        # 1. Create master meeting row
+        meeting = Meeting.objects.create(
+            filename=filename,
+            raw_text=cleaned_text,
+            summary=result.summary
+        )
 
-        try:
-            # 1. Attempt to Save to Supabase (Transactional insert)
-            meeting_id = save_meeting_analysis(
-                filename=filename,
-                raw_text=cleaned_text,
-                summary=result.summary,
-                action_items=result.action_items,
-                decisions=result.decisions,
-                blockers=result.blockers
-            )
-            # Redirect to the detail view URL for persistent page loads
-            return redirect('meeting_detail', meeting_id=meeting_id)
+        # 2. Bulk Insert Action Items
+        if result.action_items:
+            action_items_to_create = []
+            for item in result.action_items:
+                action_items_to_create.append(ActionItem(
+                    meeting=meeting,
+                    task_title=item.task_title,
+                    assigned=item.assigned,
+                    priority=item.priority,
+                    effort=item.effort,
+                    timeline=item.timeline,
+                    acceptance_criteria=item.acceptance_criteria
+                ))
+            ActionItem.objects.bulk_create(action_items_to_create)
 
-        except ValueError as db_err:
-            # Supabase environment variables are missing (Local-only mode)
-            # Fallback to direct rendering
-            context = {
-                'filename': filename,
-                'summary': result.summary,
-                'action_items': result.action_items,
-                'decisions': result.decisions,
-                'blockers': result.blockers,
-                'markdown_content': markdown_output,
-                'json_content': json_output,
-                'db_warning': str(db_err)  # Alert user they are in local mode
-            }
-            return render(request, 'meeting/result.html', context)
+        # 3. Bulk Insert Decisions
+        if result.decisions:
+            decisions_to_create = []
+            for dec in result.decisions:
+                decisions_to_create.append(Decision(
+                    meeting=meeting,
+                    decision=dec.decision,
+                    rationale=dec.rationale
+                ))
+            Decision.objects.bulk_create(decisions_to_create)
+
+        # 4. Bulk Insert Project Risks
+        if result.blockers:
+            risks_to_create = []
+            for b in result.blockers:
+                risks_to_create.append(ProjectRisk(
+                    meeting=meeting,
+                    blocker=b.blocker,
+                    impact=b.impact
+                ))
+            ProjectRisk.objects.bulk_create(risks_to_create)
+
+        # Redirect to the detail view URL for persistent page loads
+        return redirect('meeting_detail', meeting_id=meeting.id)
 
     except Exception as e:
         return render(request, 'meeting/home.html', {
@@ -138,34 +153,39 @@ def analyze_view(request):
         })
 
 def meeting_detail_view(request, meeting_id):
-    """Retrieves a saved meeting analysis from Supabase and renders it."""
+    """Retrieves a saved meeting analysis from local SQLite and renders it."""
     try:
-        data = get_meeting_analysis_by_id(str(meeting_id))
+        meeting = Meeting.objects.get(id=meeting_id)
         
+        # Query child relationships
+        action_items = meeting.action_items.all()
+        decisions = meeting.decisions.all()
+        blockers = meeting.project_risks.all()
+
         # Reconstruct the Pydantic object to leverage standard exporters
         analysis_obj = MeetingAnalysis(
-            summary=data['summary'],
+            summary=meeting.summary,
             action_items=[
-                ActionItem(
-                    task_title=item.get('task_title'),
-                    assigned=item.get('assigned'),
-                    priority=item.get('priority'),
-                    effort=item.get('effort'),
-                    timeline=item.get('timeline'),
-                    acceptance_criteria=item.get('acceptance_criteria', [])
-                ) for item in data['action_items']
+                SchemaActionItem(
+                    task_title=item.task_title,
+                    assigned=item.assigned,
+                    priority=item.priority,
+                    effort=item.effort,
+                    timeline=item.timeline,
+                    acceptance_criteria=item.acceptance_criteria
+                ) for item in action_items
             ],
             decisions=[
-                Decision(
-                    decision=dec.get('decision'),
-                    rationale=dec.get('rationale')
-                ) for dec in data['decisions']
+                SchemaDecision(
+                    decision=dec.decision,
+                    rationale=dec.rationale
+                ) for dec in decisions
             ],
             blockers=[
-                Blocker(
-                    blocker=b.get('blocker'),
-                    impact=b.get('impact')
-                ) for b in data['blockers']
+                SchemaBlocker(
+                    blocker=b.blocker,
+                    impact=b.impact
+                ) for b in blockers
             ]
         )
         
@@ -173,20 +193,20 @@ def meeting_detail_view(request, meeting_id):
         json_output = export_json(analysis_obj)
 
         context = {
-            'filename': data['filename'],
-            'summary': data['summary'],
-            'action_items': data['action_items'],
-            'decisions': data['decisions'],
-            'blockers': data['blockers'],
+            'filename': meeting.filename,
+            'summary': meeting.summary,
+            'action_items': action_items,
+            'decisions': decisions,
+            'blockers': blockers,
             'markdown_content': markdown_output,
             'json_content': json_output
         }
         return render(request, 'meeting/result.html', context)
         
-    except Exception as e:
-        past_meetings = get_all_meetings()
+    except Meeting.DoesNotExist:
+        past_meetings = Meeting.objects.all().order_by('-created_at')
         return render(request, 'meeting/home.html', {
-            'error': f'Failed to load saved meeting: {str(e)}',
+            'error': 'The requested meeting analysis could not be found.',
             'active_tab': 'file',
             'past_meetings': past_meetings
         })
