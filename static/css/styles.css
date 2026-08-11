@@ -1025,3 +1025,84 @@ textarea:focus {
         flex-direction: column;
     }
 }
+
+/* Recent Meetings History styles */
+.history-card {
+    margin-bottom: 2rem;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.history-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-main);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: all 0.15s ease;
+}
+
+.history-item:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-border);
+    transform: translateX(4px);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.08);
+}
+
+.history-item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.history-item-left .file-icon {
+    stroke: var(--text-light);
+    transition: stroke 0.15s ease;
+}
+
+.history-item:hover .file-icon {
+    stroke: var(--primary);
+}
+
+.history-filename {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.history-date {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
