@@ -21,22 +21,29 @@ def export_markdown(result: MeetingAnalysis) -> str:
     md.append(result.summary)
     md.append("\n")
 
-    # 2. Action Items (List Layout)
+    # 2. Action Items (Table Layout)
     md.append("## Action Items & Assignments\n")
     if not result.action_items:
         md.append("No action items identified.\n")
     else:
+        md.append("| # | Task | Assigned | Priority | Effort | Timeline | Acceptance Criteria |")
+        md.append("|---|---|---|---|---|---|---|")
         for idx, item in enumerate(result.action_items, start=1):
-            md.append(f"### Task {idx}: {item.task_title}")
-            md.append(f"- **Assigned:** {item.assigned}")
-            md.append(f"- **Priority:** `{item.priority}`")
-            md.append(f"- **Effort:** `{item.effort}`")
-            md.append(f"- **Timeline:** {item.timeline}")
+            task_title = item.task_title.replace("|", "\\|")
+            assigned = item.assigned.replace("|", "\\|")
+            priority = item.priority.replace("|", "\\|")
+            effort = item.effort.replace("|", "\\|")
+            timeline = item.timeline.replace("|", "\\|")
+            
+            # Format acceptance criteria as space-separated bullet strings to fit table cell
+            criteria_str = ""
             if item.acceptance_criteria:
-                md.append("- **Acceptance Criteria:**")
-                for c in item.acceptance_criteria:
-                    md.append(f"  - {c}")
-            md.append("")  # blank line spacer
+                clean_criteria = [c.replace("|", "\\|") for c in item.acceptance_criteria]
+                criteria_str = " • ".join(clean_criteria)
+                if criteria_str:
+                    criteria_str = f"• {criteria_str}"
+            
+            md.append(f"| {idx} | **{task_title}** | {assigned} | {priority} | {effort} | {timeline} | {criteria_str} |")
         md.append("\n")
 
     # 3. Decision Log
